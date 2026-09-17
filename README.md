@@ -119,10 +119,10 @@ mvn "-Dmaven.repo.local=$PWD\target\m2-repository" package
 
 ผลที่คาดหวัง: `Tests run: 10, Failures: 0, Errors: 0, Skipped: 0` และ `BUILD SUCCESS`
 
-## หลักฐานและรายงาน
+## Screenshots และรายงาน
 
-- ภาพผลลัพธ์ API: [`docs/evidence`](docs/evidence)
-- รายงาน PDF: [`output/pdf/Lab10_673380278-9Sec1.pdf`](output/pdf/Lab10_673380278-9Sec1.pdf)
+- Screenshot output จริงจาก `curl.exe -i`: [`screenshots`](screenshots)
+- รายงาน PDF: [`Lab10_673380278-9Sec1.pdf`](Lab10_673380278-9Sec1.pdf)
 
 ## Troubleshooting
 
