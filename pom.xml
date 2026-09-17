@@ -12,9 +12,8 @@
     <relativePath/>
   </parent>
 
-  <!-- ⚠️ แก้ artifactId เป็น lab10-{รหัสนักศึกษา}-sec{section} -->
   <groupId>com.example</groupId>
-  <artifactId>lab10-67XXXXXXXX-X-sec1</artifactId>
+  <artifactId>lab10-673380278-9-sec1</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>lab10-webflux</name>
   <description>Lab 10 — Spring WebFlux + WebClient | CP353002</description>

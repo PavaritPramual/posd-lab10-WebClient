@@ -10,8 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * ProductRepository — In-memory Reactive Repository
  *
- * ✅ โครงสร้างและ annotation ครบแล้ว
- * ❌ TODO: เติม method body ให้ครบทุก method
+ * ทุก operation คืนค่าเป็น Mono/Flux และไม่บล็อก thread
  *
  * ใช้ ConcurrentHashMap เป็น in-memory storage
  * (ไม่ต่อ Database — เน้นฝึก Mono/Flux)
@@ -28,7 +27,7 @@ public class ProductRepository {
 
     // ── Constructor: ใส่ข้อมูลตัวอย่าง ──────────────────
     public ProductRepository() {
-        store.put("1", new Product("1", "iPhone 15 Pro (67XXXXXXXX-X SEC 1)",
+        store.put("1", new Product("1", "iPhone 15 Pro (นายปวริศช์ ประมวล 673380278-9 SEC 1)",
                 "Electronics", "Apple", 50, 39900.0, "MEMBER"));
         store.put("2", new Product("2", "MacBook Air M3",
                 "Electronics", "Apple", 20, 49900.0, "NONE"));
@@ -38,7 +37,7 @@ public class ProductRepository {
 
     // ── 1. หา Product 1 รายการ ───────────────────────────
     /**
-     * TODO: คืน Mono<Product> จาก store โดยใช้ id
+     * คืน Mono<Product> จาก store โดยใช้ id
      *       ถ้าไม่พบให้คืน Mono.empty()
      *
      * Hint: store.get(id) คืน Product หรือ null
@@ -46,55 +45,54 @@ public class ProductRepository {
      *       ถ้ามีค่าให้ใช้ Mono.just(product)
      */
     public Mono<Product> findById(String id) {
-        // TODO: เติม code ตรงนี้
-        return null; // ← แก้บรรทัดนี้
+        return Mono.defer(() -> Mono.justOrEmpty(store.get(id)));
     }
 
     // ── 2. หา Product ทั้งหมด ────────────────────────────
     /**
-     * TODO: คืน Flux<Product> ของทุกรายการใน store
+     * คืน Flux<Product> ของทุกรายการใน store
      *
      * Hint: store.values() คืน Collection<Product>
      *       ใช้ Flux.fromIterable(...) แปลงเป็น Flux
      */
     public Flux<Product> findAll() {
-        // TODO: เติม code ตรงนี้
-        return null; // ← แก้บรรทัดนี้
+        return Flux.defer(() -> Flux.fromIterable(store.values()));
     }
 
     // ── 3. บันทึก Product ────────────────────────────────
     /**
-     * TODO: บันทึก product ลง store แล้วคืน Mono<Product>
+     * บันทึก product ลง store แล้วคืน Mono<Product>
      *
      * Hint: store.put(product.getId(), product)
      *       แล้วใช้ Mono.just(product) คืนค่า
      */
     public Mono<Product> save(Product product) {
-        // TODO: เติม code ตรงนี้
-        return null; // ← แก้บรรทัดนี้
+        return Mono.fromSupplier(() -> {
+            store.put(product.getId(), product);
+            return product;
+        });
     }
 
     // ── 4. ลบ Product ────────────────────────────────────
     /**
-     * TODO: ลบ product จาก store แล้วคืน Mono<Void>
+     * ลบ product จาก store แล้วคืน Mono<Void>
      *
      * Hint: store.remove(id)
      *       แล้วใช้ Mono.empty() คืนค่า (Mono<Void>)
      */
     public Mono<Void> deleteById(String id) {
-        // TODO: เติม code ตรงนี้
-        return null; // ← แก้บรรทัดนี้
+        return Mono.fromRunnable(() -> store.remove(id));
     }
 
     // ── 5. กรองตาม category ──────────────────────────────
     /**
-     * TODO: คืน Flux<Product> ที่ category ตรงกัน
+     * คืน Flux<Product> ที่ category ตรงกัน
      *
      * Hint: findAll()
      *       .filter(p -> p.getCategory().equalsIgnoreCase(category))
      */
     public Flux<Product> findByCategory(String category) {
-        // TODO: เติม code ตรงนี้
-        return null; // ← แก้บรรทัดนี้
+        return findAll()
+                .filter(product -> category.equalsIgnoreCase(product.getCategory()));
     }
 }
