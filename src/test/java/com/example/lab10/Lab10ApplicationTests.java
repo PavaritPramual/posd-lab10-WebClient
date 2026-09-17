@@ -2,75 +2,107 @@ package com.example.lab10;
 
 import com.example.lab10.model.Product;
 import com.example.lab10.repository.ProductRepository;
+import com.example.lab10.service.ProductService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.test.StepVerifier;
 
-/**
- * Lab10ApplicationTests — ทดสอบ Reactive code
- *
- * ✅ test findById() ทำเสร็จแล้วเป็นตัวอย่าง
- * ❌ TODO: เพิ่ม test สำหรับ method ที่นักศึกษาทำเอง
- *
- * StepVerifier — วิธีทดสอบ Mono/Flux:
- *   StepVerifier.create(mono/flux)
- *     .expectNext(value)     ← คาดหวังค่าที่ได้
- *     .expectNextCount(n)    ← คาดหวังจำนวน element
- *     .verifyComplete()      ← ยืนยัน onComplete
- *     .verifyError()         ← ยืนยัน onError
- */
+import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest
 class Lab10ApplicationTests {
 
-    @Autowired
     private ProductRepository repository;
+    private ProductService service;
 
-    // ══════════════════════════════════════════════════════
-    // ✅ ตัวอย่าง test — ศึกษาแล้วเพิ่ม test เอง
-    // ══════════════════════════════════════════════════════
-
-    @Test
-    void contextLoads() {
-        // Spring Application Context โหลดสำเร็จ
+    @BeforeEach
+    void setUp() {
+        repository = new ProductRepository();
+        service = new ProductService(repository);
     }
 
     @Test
-    void testFindById_found() {
-        // ✅ ตัวอย่าง: ทดสอบ findById ที่พบข้อมูล
+    void contextLoads() {
+    }
+
+    @Test
+    void findByIdReturnsProductAndCompletesEmptyWhenMissing() {
         StepVerifier.create(repository.findById("1"))
-                .expectNextMatches(p -> p.getName().contains("iPhone"))
+                .assertNext(product -> {
+                    assertThat(product.getName()).contains("นายปวริศช์ ประมวล");
+                    assertThat(product.getName()).contains("673380278-9");
+                })
+                .verifyComplete();
+
+        StepVerifier.create(repository.findById("999"))
                 .verifyComplete();
     }
 
     @Test
-    void testFindById_notFound() {
-        // ✅ ตัวอย่าง: ทดสอบ findById ที่ไม่พบข้อมูล
-        StepVerifier.create(repository.findById("999"))
-                .verifyComplete(); // Mono.empty() → onComplete ทันที
-    }
-
-    // ══════════════════════════════════════════════════════
-    // ❌ TODO: เพิ่ม test ด้านล่างนี้
-    // ══════════════════════════════════════════════════════
-
-    @Test
-    void testFindAll() {
-        // TODO: ทดสอบว่า findAll() คืน Flux ที่มี element
-        // Hint: StepVerifier.create(repository.findAll())
-        //         .expectNextCount(3)   ← มี 3 รายการ
-        //         .verifyComplete()
+    void findAllReturnsSeedProducts() {
+        StepVerifier.create(repository.findAll().collectList())
+                .assertNext(products -> assertThat(products).hasSize(3))
+                .verifyComplete();
     }
 
     @Test
-    void testSave() {
-        // TODO: ทดสอบ save() บันทึกแล้วคืน Product
-        // Hint: สร้าง Product ใหม่ → save → expectNext → verifyComplete
+    void saveAndDeleteAreDeferredReactiveOperations() {
+        Product product = new Product("test-1", "Keyboard", "Accessories",
+                "Keychron", 8, 3490.0, "NONE");
+
+        StepVerifier.create(repository.save(product).flatMap(saved -> repository.findById(saved.getId())))
+                .expectNext(product)
+                .verifyComplete();
+
+        StepVerifier.create(repository.deleteById(product.getId())
+                        .then(repository.findById(product.getId())))
+                .verifyComplete();
     }
 
     @Test
-    void testFindByCategory() {
-        // TODO: ทดสอบ findByCategory("Electronics")
-        // Hint: expectNextCount(3) เพราะมี 3 รายการใน Electronics
+    void categoryFilterIgnoresCase() {
+        StepVerifier.create(repository.findByCategory("electronics").collectList())
+                .assertNext(products -> assertThat(products)
+                        .hasSize(3)
+                        .allMatch(product -> "Electronics".equals(product.getCategory())))
+                .verifyComplete();
+    }
+
+    @Test
+    void serviceGeneratesIdAndUsesFlatMapToSave() {
+        Product product = new Product(null, "Mouse", "Accessories",
+                "Logitech", 12, 1290.0, "NONE");
+
+        StepVerifier.create(service.save(product))
+                .assertNext(saved -> {
+                    assertThat(saved.getId()).isNotBlank();
+                    assertThat(saved.getName()).isEqualTo("Mouse");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void serviceReturnsNotFoundError() {
+        StepVerifier.create(service.getById("missing"))
+                .expectErrorSatisfies(error -> {
+                    assertThat(error).isInstanceOf(ResponseStatusException.class);
+                    assertThat(((ResponseStatusException) error).getStatusCode().value()).isEqualTo(404);
+                })
+                .verify();
+    }
+
+    @Test
+    void discountedPricesCoverAllDiscountTypes() {
+        StepVerifier.create(service.getDiscountedPrice("1"))
+                .expectNext(35910.0)
+                .verifyComplete();
+        StepVerifier.create(service.getDiscountedPrice("2"))
+                .expectNext(49900.0)
+                .verifyComplete();
+        StepVerifier.create(service.getDiscountedPrice("3"))
+                .expectNext(23920.0)
+                .verifyComplete();
     }
 }
